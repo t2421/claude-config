@@ -7,6 +7,7 @@
 #
 # 実戦投入済みの元実装: t2421/prototyping の deploy-device.sh
 set -euo pipefail
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 cd "$(dirname "$0")"
 
 # ===== 設定 (プロジェクトごとに埋める) =====
@@ -18,7 +19,7 @@ SCHEME="<Xcodeスキーム名>"
 APP_NAME="<生成される .app 名 (拡張子なし)>"
 # ==========================================
 
-if grep -q '^\(DEVICE_NAME\|DEVICE_UDID\|BUNDLE_ID\|IDENTITY\|SCHEME\|APP_NAME\)="<' "$0"; then
+if grep -q '^\(DEVICE_NAME\|DEVICE_UDID\|BUNDLE_ID\|IDENTITY\|SCHEME\|APP_NAME\)="<' "$SELF"; then
     echo "ERROR: テンプレートの設定変数を埋めてから実行してください" >&2
     exit 1
 fi

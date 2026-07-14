@@ -27,19 +27,33 @@ fi
 DERIVED="${TMPDIR:-/tmp}/${SCHEME}-device-build"
 LOG="$DERIVED/build.log"
 
-# 0. デバイス接続確認 (未接続なら早期にわかりやすく失敗)
-if ! xcrun devicectl list devices 2>/dev/null | grep -q "$DEVICE_NAME.*connected"; then
+# 0a. 並行実行ロック (derivedDataや署名途中appの共有は壊れたビルドを生む)
+LOCK="$DERIVED.lock"
+if ! mkdir "$LOCK" 2>/dev/null; then
+    echo "ERROR: 別の deploy が実行中です ($LOCK が存在)。完了を待つか、残骸なら rmdir してください" >&2
+    exit 1
+fi
+trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+
+# 0b. デバイス接続確認 (State列の完全一致。"disconnected" への部分一致を防ぐ)
+if ! xcrun devicectl list devices 2>/dev/null | awk -v name="$DEVICE_NAME" '$1==name && $4=="connected" {found=1} END {exit !found}'; then
     echo "ERROR: $DEVICE_NAME が接続されていません (USB接続 or 同一Wi-Fi+ロック解除が必要)" >&2
     exit 1
 fi
 
-# 1. バンドルIDに合うプロビジョニングプロファイルを探す
+# 1. バンドルIDに合う「有効期限内の」プロビジョニングプロファイルを探す
 PROFILE=""
+NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 for f in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"/*.mobileprovision; do
-    if security cms -D -i "$f" 2>/dev/null | grep -q "$BUNDLE_ID"; then
-        PROFILE="$f"
-        break
+    security cms -D -i "$f" 2>/dev/null > "${TMPDIR:-/tmp}/deploy-profile-check.plist" || continue
+    grep -q "$BUNDLE_ID" "${TMPDIR:-/tmp}/deploy-profile-check.plist" || continue
+    EXPIRY="$(plutil -extract ExpirationDate raw "${TMPDIR:-/tmp}/deploy-profile-check.plist" 2>/dev/null || echo "")"
+    if [ -n "$EXPIRY" ] && [ "$EXPIRY" \< "$NOW" ]; then
+        echo "WARN: 期限切れプロファイルをスキップ: $(basename "$f")" >&2
+        continue
     fi
+    PROFILE="$f"
+    break
 done
 if [ -z "$PROFILE" ]; then
     echo "ERROR: $BUNDLE_ID のプロビジョニングプロファイルが見つかりません" >&2
@@ -72,7 +86,11 @@ codesign --verify --strict "$APP"
 echo "SIGN OK"
 
 # 4. インストール + 起動 (起動は端末ロック中だと失敗するが、インストール済みなら成功扱い)
-xcrun devicectl device install app --device "$DEVICE_UDID" "$APP" > /dev/null
+if ! xcrun devicectl device install app --device "$DEVICE_UDID" "$APP" > "$DERIVED/install.log" 2>&1; then
+    echo "ERROR: インストール失敗。ログ末尾:" >&2
+    tail -5 "$DERIVED/install.log" >&2
+    exit 1
+fi
 echo "INSTALL OK"
 if xcrun devicectl device process launch --device "$DEVICE_UDID" "$BUNDLE_ID" > /dev/null 2>&1; then
     echo "LAUNCH OK — $DEVICE_NAME で起動しました"

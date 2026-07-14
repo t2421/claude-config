@@ -39,45 +39,21 @@ xcrun devicectl device install app --device <UDID> <path/to/App.app>
 自動プロビジョニングが使えなくても、**同じチームの有効なプロファイルが1つでも
 ローカルにあれば**、そのバンドルIDを借用して配信できる。
 
-### 手順 (deploy スクリプトの雛形)
+### 手順
+
+実行可能な雛形が [templates/deploy-device.sh](templates/deploy-device.sh) にある。
+新しいプロジェクトでは:
 
 ```bash
-#!/bin/bash
-set -euo pipefail
-DEVICE_UDID="<devicectl list devices のUDID>"
-BUNDLE_ID="<借用するバンドルID>"          # プロファイルが存在するID
-IDENTITY="Apple Development: <名前> (<ID>)"  # security find-identity の表記
-DERIVED="${TMPDIR:-/tmp}/device-build"
-
-# 0. 接続確認 (早期失敗)
-xcrun devicectl list devices | grep -q "<デバイス名>.*connected" || { echo "未接続"; exit 1; }
-
-# 1. バンドルIDに合うプロファイルを探す
-PROFILE=""
-for f in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"/*.mobileprovision; do
-  security cms -D -i "$f" 2>/dev/null | grep -q "$BUNDLE_ID" && { PROFILE="$f"; break; }
-done
-[ -n "$PROFILE" ] || { echo "プロファイルなし"; exit 1; }
-
-# 2. 未署名で Release ビルド (終了コードで成否判定)
-xcodebuild -scheme <Scheme> -configuration Release -destination 'generic/platform=iOS' \
-  -derivedDataPath "$DERIVED" build \
-  PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" CODE_SIGNING_ALLOWED=NO
-APP="$DERIVED/Build/Products/Release-iphoneos/<App>.app"
-
-# 3. プロファイル埋め込み → エンタイトルメント抽出 → リサイン
-cp "$PROFILE" "$APP/embedded.mobileprovision"
-security cms -D -i "$PROFILE" > /tmp/profile.plist
-plutil -extract Entitlements xml1 -o /tmp/ent.plist /tmp/profile.plist
-find "$APP" -name "*.dylib" -exec codesign --force --sign "$IDENTITY" {} \;   # 内部Mach-Oを先に!
-codesign --force --sign "$IDENTITY" --entitlements /tmp/ent.plist "$APP"
-codesign --verify --strict "$APP"
-
-# 4. インストール + 起動 (ロック中は起動だけ失敗する → 案内して成功扱い)
-xcrun devicectl device install app --device "$DEVICE_UDID" "$APP"
-xcrun devicectl device process launch --device "$DEVICE_UDID" "$BUNDLE_ID" \
-  || echo "端末ロック中。アイコンから起動してください"
+cp <このスキルのディレクトリ>/templates/deploy-device.sh <プロジェクト>/deploy-device.sh
+chmod +x deploy-device.sh
+# 冒頭の「設定」6変数 (DEVICE_NAME / DEVICE_UDID / BUNDLE_ID / IDENTITY / SCHEME / APP_NAME) を埋める
 ```
+
+雛形は プレースホルダ未記入ガード / 接続確認の早期失敗 / プロファイル自動探索 /
+未署名Releaseビルド → 内部dylibから順にリサイン / ロック中の起動失敗許容 を実装済み。
+処理の流れ: ①接続確認 → ②バンドルIDに合うプロファイル探索 → ③未署名Releaseビルド
+→ ④プロファイル埋め込み+エンタイトルメント抽出+リサイン → ⑤devicectlでインストール+起動。
 
 ## ハマりどころ (実体験由来)
 

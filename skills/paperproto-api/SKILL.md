@@ -71,6 +71,7 @@ curl -s -o s.png $BASE/prototypes/<id>/screens/<screenID>.png  # 3. 見た目を
   "screens": [
     { "id": "home",
       "nav": { "title": "ホーム", "trailing": { "icon": "plus", "action": "sheet:add" } },
+      "note": "検索を最上部に: 主要導線のため。グリッドは2列で一覧性を優先",
       "children": [
         { "type": "searchBar", "placeholder": "探す" },
         { "type": "grid", "columns": 2, "repeat": 6, "action": "push:done",
@@ -85,6 +86,8 @@ curl -s -o s.png $BASE/prototypes/<id>/screens/<screenID>.png  # 3. 見た目を
 - アクション: `push:<id>` `sheet:<id>` `back` `dismiss` `tab:<n>` `alert:<msg>|<btns>` `actionSheet:<opts>` `toast:<msg>`
 - ダミートークン: `{{name}} {{title}} {{caption}} {{price}} {{index}}` (repeat内でindexごとに変わる)
 - `tasks` を定義すると Play 開始時に被験者へお題が提示され、ゴール画面到達で自動計測される
+- **各画面に `note` (設計メモ) を必ず書く**: なぜその構成にしたかの判断理由。エディタ/フローマップに
+  表示され、人間のレビューと後続セッションの文脈になる (Play中は被験者に見えない)
 
 ## 4. UX検証結果の分析
 

@@ -32,7 +32,9 @@ LOCK="$DERIVED.lock"
 ENT_DIR=""
 cleanup() {
     rmdir "$LOCK" 2>/dev/null || true
-    [ -n "$ENT_DIR" ] && rm -rf "$ENT_DIR"
+    # 注意: `[ -n ... ] &&` を最後に置くと ENT_DIR 未使用時に trap が非ゼロで終わり
+    #       正常終了でも exit code 1 になる
+    if [ -n "$ENT_DIR" ]; then rm -rf "$ENT_DIR"; fi
 }
 if ! mkdir "$LOCK" 2>/dev/null; then
     echo "ERROR: 別の deploy が実行中です ($LOCK が存在)。完了を待つか、残骸なら rmdir してください" >&2

@@ -38,10 +38,12 @@ for i in $(seq 1 20); do curl -s -m 1 -o /dev/null http://localhost:8787/prototy
 
 ### c. Google Drive (端末に今すぐ届かないとき)
 
-Drive の「PaperProto」フォルダに `<名前>.json` を置く (Claude の Drive 連携ツールで書ける)
-→ ユーザーがアプリで「Google Driveから同期」をタップすると `gdrive-<名前>` として取り込まれる。
-push (Bridge) と pull (Drive) の使い分け: リアルタイムに直したいなら Bridge、
-時間差で届けばよいなら Drive。
+Drive の「PaperProto」フォルダに `<id>.json` を置く (Claude の Drive 連携ツールで書ける)
+→ ユーザーがアプリで「Google Driveから同期」をタップすると `<id>` として取り込まれる。
+**同期は双方向**: 「Driveファイル名 = ドキュメントid」で1対1対応し、端末側での編集や
+Bridge PUT も自動でDriveへ書き戻される (= Driveが正典・バックアップ)。Bridgeで作った後に
+Driveを見れば同じJSONがあるので、二重に置く必要はない。
+使い分け: リアルタイムに直したいなら Bridge、時間差で届けばよいなら Drive。
 
 ## 2. 黄金ワークフロー
 
@@ -103,5 +105,6 @@ curl -s $BASE/sessions/<id>    # プレイ操作ログ (JSON配列)
 | warnings「到達できません」 | alert のボタンは遷移しない仕様。完了画面へは push で繋ぐ |
 | PNGでカルーセル等が横に見切れる | スナップショットは非スクロール描画 (先頭側のみ)。実機Playでは正常にスクロールする |
 | PUTが400 | id に日本語や記号。英数 `-_` のみに |
-| Driveに置いたのに出てこない | 同期は手動 (ユーザーが「同期」をタップ)。自動ではない |
+| Driveに置いたのに出てこない | pull は手動 (ユーザーが「同期」をタップ)。端末→Drive の書き戻しだけが自動 |
+| 削除が同期されない | 削除は双方向とも意図的に非同期 (誤削除の波及防止)。各所で手動削除する |
 | デモを直接開きたい | 起動引数 `-autoplay <id>` でPlayerを直接開ける (スクショ検証に便利) |

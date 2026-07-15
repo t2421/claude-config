@@ -29,11 +29,16 @@ LOG="$DERIVED/build.log"
 
 # 0a. 並行実行ロック (derivedDataや署名途中appの共有は壊れたビルドを生む)
 LOCK="$DERIVED.lock"
+ENT_DIR=""
+cleanup() {
+    rmdir "$LOCK" 2>/dev/null || true
+    [ -n "$ENT_DIR" ] && rm -rf "$ENT_DIR"
+}
 if ! mkdir "$LOCK" 2>/dev/null; then
     echo "ERROR: 別の deploy が実行中です ($LOCK が存在)。完了を待つか、残骸なら rmdir してください" >&2
     exit 1
 fi
-trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+trap cleanup EXIT
 
 # 0b. デバイス接続確認 (State列の完全一致。"disconnected" への部分一致を防ぐ)
 if ! xcrun devicectl list devices 2>/dev/null | awk -v name="$DEVICE_NAME" '$1==name && $4=="connected" {found=1} END {exit !found}'; then
@@ -75,8 +80,7 @@ APP="$DERIVED/Build/Products/Release-iphoneos/$APP_NAME.app"
 
 # 3. プロファイル埋め込み + エンタイトルメント抽出 + リサイン
 #    (内部Mach-Oを先に署名しないと起動時にdyldが拒否する)
-ENT_DIR="$(mktemp -d)"
-trap 'rm -rf "$ENT_DIR"' EXIT
+ENT_DIR="$(mktemp -d)"   # 後始末は冒頭のcleanup (trap EXITは上書き式のため二重設定禁止)
 security cms -D -i "$PROFILE" > "$ENT_DIR/profile.plist"
 plutil -extract Entitlements xml1 -o "$ENT_DIR/ent.plist" "$ENT_DIR/profile.plist"
 cp "$PROFILE" "$APP/embedded.mobileprovision"

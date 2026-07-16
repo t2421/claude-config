@@ -34,3 +34,4 @@ cd ~/everything-claude-code && ./install.sh web swift   # 使う言語を選ぶ
 - `rules/swift/deployment.md` — iOS: テスト後に実機配信、deployスクリプトの要件
 - `skills/ios-device-deploy` — 実機配信 (プロファイル借用リサイン) の手順書
 - `skills/codex-sol` — Codex CLI へのタスク委譲手順
+- `skills/gcp-infra-bootstrap` — GCPプロジェクト作成〜OAuthクライアント〜Cloud Runデプロイの人間作業最小化手順

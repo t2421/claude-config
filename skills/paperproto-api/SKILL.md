@@ -48,9 +48,9 @@ Driveを見れば同じJSONがあるので、二重に置く必要はない。
 ## 2. 黄金ワークフロー
 
 ```bash
-curl -s $BASE/schema            # 1. 全29ブロックのプロパティ仕様+実例JSON (必ず最初に読む)
+curl -s $BASE/schema            # 1. 全ブロックのプロパティ仕様+実例JSON (数は増えるのでGET /schemaが正) (必ず最初に読む)
 curl -s -X PUT $BASE/prototypes/<id> --data-binary @doc.json   # 2. 流し込み
-#    → 応答の warnings (未知ブロック・宙に浮いた遷移・到達不能画面・空画面) が
+#    → 応答の warnings (未知ブロック・未知プロパティ=誤字検知・宙に浮いた遷移・到達不能画面・空画面) が
 #      空になるまで修正する。「warnings空 = 構造として完全」が終了条件
 curl -s -o s.png $BASE/prototypes/<id>/screens/<screenID>.png  # 3. 見た目をPNGで自己検証
 #    → Readツールで画像を見て、レイアウト破綻・違和感を自分で直す

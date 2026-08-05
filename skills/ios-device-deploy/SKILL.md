@@ -62,6 +62,7 @@ chmod +x deploy-device.sh
 | 起動直後に即クラッシュ、`dyld: Library not loaded ... .debug.dylib` | Debugビルドは本体が `.debug.dylib` に分離される。**Releaseでビルドする**か、内部dylibを先に署名する |
 | `Xcode managed profile ... requires manually managed` | Xcode管理プロファイルは `PROVISIONING_PROFILE_SPECIFIER` で指定できない。上記の「未署名ビルド→後からリサイン」方式を使う |
 | `devicectl` が `unavailable` / `Locked` | 未接続 or ロック中。Wi-Fi接続なら同一ネットワーク+ロック解除。インストールは成功していることが多い |
+| `xcodebuild: Timed out waiting for all destinations` + `The developer disk image could not be mounted` | `devicectl list devices` が **`connected (no DDI)`** の状態。デバイスは見えているがDDI未マウント＝**ロック中**(または初回接続で「このコンピュータを信頼」未応答)。**リトライしても直らない** — ユーザーに画面ロック解除を依頼してから再実行する |
 | 借用IDのアプリが上書きされる | 借用中は元のアプリと共存できない。ユーザーに明示しておく |
 | Bashサンドボックスで codesign/keychain が失敗 | 署名・devicectl はサンドボックス無効で実行する必要がある |
 

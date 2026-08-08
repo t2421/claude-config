@@ -36,3 +36,4 @@ cd ~/everything-claude-code && ./install.sh web swift   # 使う言語を選ぶ
 - `skills/codex-sol` — Codex CLI へのタスク委譲手順
 - `skills/gcp-infra-bootstrap` — GCPプロジェクト作成〜OAuthクライアント〜Cloud Runデプロイの人間作業最小化手順
 - `skills/slack-post-with-image` — Slack への画像付き投稿手順 (MCP に upload が無いためブラウザ操作)
+- `skills/headless-agent-permissions` — 非対話エージェントが「無言」になる権限詰まりの切り分けと対処

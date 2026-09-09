@@ -31,6 +31,7 @@ cd ~/everything-claude-code && ./install.sh web swift   # 使う言語を選ぶ
 ## 内容
 
 - `rules/common/deployment.md` — 修正後はユーザーの検証環境へ必ず配信する原則
+- `rules/common/pr-visual-captures.md` — 見た目が変わる変更はPRにスクリーンショット/キャプチャを添付する原則
 - `rules/swift/deployment.md` — iOS: テスト後に実機配信、deployスクリプトの要件
 - `skills/ios-device-deploy` — 実機配信 (プロファイル借用リサイン) の手順書
 - `skills/codex-sol` — Codex CLI へのタスク委譲手順

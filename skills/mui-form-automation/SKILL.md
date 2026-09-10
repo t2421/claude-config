@@ -84,3 +84,17 @@ window.__pickChip = async (root, label, category) => {
   → `lambda m: text` で渡す
 - textarea には `maxlength` がある (例: 300字)。超えると入力が黙って切れるので、
   投入前に `text.length` を検証する
+
+## 補遺: Vue (v-model) のフォームと、長い JS 実行のハマりどころ
+
+- **Vue 2 の v-model** は React より素直。`el.value = v` の後に `input` と `change` を
+  dispatch すれば反映される（input 要素に `_value` プロパティがあれば Vue 管理）。
+  radio / checkbox は `.click()`。`<input type=month>` は `"2022-04"` 形式で入る
+- **SPA なら `window.__helper` は画面遷移後も生きる**。`a.click()` で遷移 → フォーム出現を
+  ポーリング → 入力 → 保存 → 一覧に戻るのを1回の JS 呼び出しで回せる
+- **`javascript_tool` は 45 秒でタイムアウトするが、ページ側の JS は止まらず完走する**。
+  タイムアウト後は「再実行」せず、まず状態を読み直して差分だけ続きを流す
+  （再実行すると二重追加・二重クリックになる）。1 呼び出しは 10〜20 操作程度に分割する
+- react-select の行ごとの年数ドロップダウンは、`input` に focus → `ArrowDown` の keydown で
+  開き、`aria-controls` の listbox から option を `.click()`。検索型 Autocomplete の
+  候補が無い語（マスタ未登録）を続けて投げると固まりやすいので、1語ずつ確認する

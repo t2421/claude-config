@@ -56,3 +56,23 @@ if (e.timeStamp <= openedAtRef.current) return;  // キーハンドラ冒頭
 並行ビルド等で機械が飽和していると、フルスイートでは環境起因の失敗が出る
 (初期描画 30 秒超え等)。**失敗テストは単体で再実行して判定**する。
 実バグ調査は一時 spec で内部状態 (busy / runActive / 時刻) を JSON ダンプすると速い。
+
+### 5. DOM 窓のポップ演出は `scale` / `translate` 個別プロパティで
+
+canvas の上に出す窓は `left: 50%; transform: translateX(-50%)` で中央寄せしがち。
+開くアニメを `transform: scale()` で書くと中央寄せが上書きされて一瞬ずれる。
+**CSS の個別プロパティ `scale` / `translate` を keyframes に使う**と既存の
+`transform` と合成され壊れない (ボタンの押下沈み込み `button:active { translate: 0 2px }` も同様)。
+`prefers-reduced-motion` で `animation-duration: 0.01ms !important` の全体停止を併設する。
+
+### 6. ポップ演出を入れたら「大きさを測る E2E」が落ちる
+
+`boundingBox()` で タップ領域 ≥56px などを検証していると、開き途中 (scale 0.96) を
+測って 53.8px で落ちる。測る前に
+`await el.evaluate(e => Promise.all(e.getAnimations({ subtree: true }).map(a => a.finished)))`
+で アニメ完了を待つ (固定 sleep は使わない)。
+
+### 7. canvas の上の `backdrop-filter` は重い
+
+背後の canvas が毎フレーム描き変わると blur も毎フレーム再計算になる。
+戦闘中など頻繁に出る窓は 半透明の暗幕だけにし、blur は静的な場面 (プロフィール選択等) に限る。
